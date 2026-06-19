@@ -1,0 +1,903 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>El-Sharkawy | Electronics &amp; Computer Maintenance — Maadi, Cairo</title>
+<meta name="description" content="El-Sharkawy — Electronics sales and computer maintenance in Maadi, Cairo. Laptops, desktops, monitors, keyboards, SSDs, and expert repair." />
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          ink:   '#0E1217',
+          panel: '#161B22',
+          panel2:'#1D232C',
+          line:  '#2A323D',
+          paper: '#EDEFF2',
+          mute:  '#8B96A5',
+          amber: '#F2A93B',
+          amberD:'#C9852A',
+          teal:  '#3FD6C8',
+          red:   '#E5575C',
+        },
+        fontFamily: {
+          display: ['"Space Grotesk"','sans-serif'],
+          body: ['"Inter"','sans-serif'],
+          mono: ['"JetBrains Mono"','monospace'],
+        },
+        backgroundImage: {
+          'grid': "linear-gradient(rgba(242,169,59,0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(242,169,59,0.06) 1px, transparent 1px)",
+        }
+      }
+    }
+  }
+</script>
+
+<style>
+  html { scroll-behavior: smooth; }
+  body { background:#0E1217; }
+  ::selection { background:#F2A93B; color:#0E1217; }
+  .bg-grid-size { background-size: 36px 36px; }
+  ::-webkit-scrollbar{ width:10px; height:10px; }
+  ::-webkit-scrollbar-track{ background:#0E1217; }
+  ::-webkit-scrollbar-thumb{ background:#2A323D; border-radius:8px; }
+  ::-webkit-scrollbar-thumb:hover{ background:#F2A93B; }
+  @keyframes pulse-soft { 0%,100%{opacity:1} 50%{opacity:.55} }
+  .pulse-soft{ animation: pulse-soft 2s ease-in-out infinite; }
+  @keyframes rise { from{opacity:0; transform:translateY(14px)} to{opacity:1; transform:translateY(0)} }
+  .rise{ animation: rise .55s cubic-bezier(.16,1,.3,1) both; }
+  .focus-ring:focus-visible{ outline:2px solid #F2A93B; outline-offset:2px; }
+  input:focus, select:focus, textarea:focus { outline:none; }
+  .tick { background-image: repeating-linear-gradient(90deg, #2A323D 0 1px, transparent 1px 8px); }
+</style>
+</head>
+<body class="font-body text-paper antialiased">
+<div id="root"></div>
+
+<script type="text/plain" id="app-source">
+const { useState, useEffect, useMemo, useRef } = React;
+
+/* ---------------------------------------------------------
+   DATA LAYER — localStorage backed
+--------------------------------------------------------- */
+const LS_PRODUCTS = 'es_products_v1';
+const LS_RESERVATIONS = 'es_reservations_v1';
+
+const CATEGORY_ICON = {
+  Laptops: 'laptop',
+  'Desktop PCs': 'tower',
+  Monitors: 'monitor',
+  Keyboards: 'keyboard',
+  'SSD Drives': 'ssd',
+};
+
+const seedProducts = () => ([
+  { id: 'p1', name: 'Dell Latitude 5420 — Core i5 / 16GB', category: 'Laptops', qty: 7, price: 21500 },
+  { id: 'p2', name: 'Lenovo ThinkPad T14 — Core i7 / 16GB', category: 'Laptops', qty: 2, price: 27900 },
+  { id: 'p3', name: 'ASUS TUF Gaming F15 — RTX 3050', category: 'Laptops', qty: 0, price: 32500 },
+  { id: 'p4', name: 'El-Sharkawy Builder PC — Ryzen 5 / 16GB / GTX 1660', category: 'Desktop PCs', qty: 4, price: 18900 },
+  { id: 'p5', name: 'Office Mini Tower — i3 / 8GB / 256GB SSD', category: 'Desktop PCs', qty: 9, price: 9800 },
+  { id: 'p6', name: 'Creator Tower — Ryzen 7 / 32GB / RTX 4060', category: 'Desktop PCs', qty: 1, price: 48500 },
+  { id: 'p7', name: 'Samsung 24" FHD Monitor — 75Hz', category: 'Monitors', qty: 12, price: 4200 },
+  { id: 'p8', name: 'LG UltraGear 27" QHD — 165Hz', category: 'Monitors', qty: 3, price: 9600 },
+  { id: 'p9', name: 'Dell 22" Business Monitor', category: 'Monitors', qty: 0, price: 3500 },
+  { id: 'p10', name: 'Logitech MK270 Keyboard + Mouse Combo', category: 'Keyboards', qty: 18, price: 650 },
+  { id: 'p11', name: 'Redragon K552 Mechanical Keyboard', category: 'Keyboards', qty: 5, price: 1450 },
+  { id: 'p12', name: 'Genius Slimstar Wireless Keyboard', category: 'Keyboards', qty: 0, price: 520 },
+  { id: 'p13', name: 'Kingston A400 480GB SATA SSD', category: 'SSD Drives', qty: 25, price: 980 },
+  { id: 'p14', name: 'WD Black SN770 1TB NVMe SSD', category: 'SSD Drives', qty: 6, price: 2650 },
+  { id: 'p15', name: 'Samsung 970 EVO Plus 2TB NVMe SSD', category: 'SSD Drives', qty: 2, price: 4900 },
+]);
+
+const loadProducts = () => {
+  try {
+    const raw = localStorage.getItem(LS_PRODUCTS);
+    if (raw) return JSON.parse(raw);
+  } catch(e) {}
+  const seed = seedProducts();
+  localStorage.setItem(LS_PRODUCTS, JSON.stringify(seed));
+  return seed;
+};
+const saveProducts = (list) => localStorage.setItem(LS_PRODUCTS, JSON.stringify(list));
+
+const loadReservations = () => {
+  try {
+    const raw = localStorage.getItem(LS_RESERVATIONS);
+    if (raw) return JSON.parse(raw);
+  } catch(e) {}
+  return [];
+};
+const saveReservations = (list) => localStorage.setItem(LS_RESERVATIONS, JSON.stringify(list));
+
+const statusOf = (qty) => qty <= 0 ? 'Out of Stock' : qty <= 3 ? 'Low Stock' : 'Available';
+const statusStyle = {
+  'Available':   { dot:'bg-teal',  text:'text-teal',  ring:'ring-teal/30',  bg:'bg-teal/10' },
+  'Low Stock':   { dot:'bg-amber', text:'text-amber', ring:'ring-amber/30', bg:'bg-amber/10' },
+  'Out of Stock':{ dot:'bg-red',   text:'text-red',   ring:'ring-red/30',   bg:'bg-red/10' },
+};
+
+const fmtEGP = (n) => n.toLocaleString('en-US') + ' EGP';
+
+/* ---------------------------------------------------------
+   ICONS — small inline SVG set (no external deps)
+--------------------------------------------------------- */
+const Icon = ({ name, className }) => {
+  const common = { className, viewBox:'0 0 24 24', fill:'none', stroke:'currentColor', strokeWidth:'1.6', strokeLinecap:'round', strokeLinejoin:'round' };
+  switch(name){
+    case 'laptop': return <svg {...common}><rect x="4" y="4" width="16" height="10" rx="1"/><path d="M2 18h20l-1.5 2.2a1 1 0 0 1-.83.44H4.33a1 1 0 0 1-.83-.44L2 18Z"/></svg>;
+    case 'tower': return <svg {...common}><rect x="6" y="3" width="9" height="18" rx="1"/><circle cx="10.5" cy="7" r="0.6" fill="currentColor"/><line x1="8" y1="14" x2="13" y2="14"/><line x1="8" y1="17" x2="13" y2="17"/></svg>;
+    case 'monitor': return <svg {...common}><rect x="3" y="4" width="18" height="12" rx="1"/><line x1="8" y1="20" x2="16" y2="20"/><line x1="12" y1="16" x2="12" y2="20"/></svg>;
+    case 'keyboard': return <svg {...common}><rect x="3" y="6" width="18" height="12" rx="1.2"/><line x1="6" y1="10" x2="6.01" y2="10"/><line x1="9" y1="10" x2="9.01" y2="10"/><line x1="12" y1="10" x2="12.01" y2="10"/><line x1="15" y1="10" x2="15.01" y2="10"/><line x1="18" y1="10" x2="18.01" y2="10"/><line x1="7" y1="14" x2="17" y2="14"/></svg>;
+    case 'ssd': return <svg {...common}><rect x="4" y="7" width="16" height="10" rx="1.5"/><line x1="7" y1="11" x2="11" y2="11"/><circle cx="16" cy="13.5" r="1.3"/></svg>;
+    case 'phone': return <svg {...common}><path d="M5 4h3l1.5 4.5L7.5 10a12 12 0 0 0 6.5 6.5l1.5-2L20 16v3a2 2 0 0 1-2 2C10.8 21 3 13.2 3 6a2 2 0 0 1 2-2Z"/></svg>;
+    case 'pin': return <svg {...common}><path d="M12 21s7-6.4 7-12a7 7 0 1 0-14 0c0 5.6 7 12 7 12Z"/><circle cx="12" cy="9" r="2.4"/></svg>;
+    case 'clock': return <svg {...common}><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.2 1.9"/></svg>;
+    case 'check': return <svg {...common}><path d="M20 6 9 17l-5-5"/></svg>;
+    case 'menu': return <svg {...common}><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>;
+    case 'close': return <svg {...common}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>;
+    case 'arrow': return <svg {...common}><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>;
+    case 'shield': return <svg {...common}><path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6l-8-3Z"/></svg>;
+    case 'bolt': return <svg {...common}><polygon points="13 2 4 14 11 14 10 22 20 9 13 9 13 2"/></svg>;
+    case 'tool': return <svg {...common}><path d="M14.7 6.3a4 4 0 0 1-5.4 5.4L4 17l3 3 5.3-5.3a4 4 0 0 1 5.4-5.4l-2 2-2.6-2.6 2-2Z"/></svg>;
+    case 'trash': return <svg {...common}><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 13h10l1-13"/></svg>;
+    case 'plus': return <svg {...common}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>;
+    case 'lock': return <svg {...common}><rect x="5" y="11" width="14" height="9" rx="1.5"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>;
+    case 'logout': return <svg {...common}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>;
+    case 'whatsapp': return <svg {...common} fill="currentColor" stroke="none"><path d="M12 2a10 10 0 0 0-8.6 15L2 22l5.2-1.4A10 10 0 1 0 12 2Zm0 2a8 8 0 0 1 6.9 12.1l-.3.5.7 2.6-2.6-.7-.5.3A8 8 0 1 1 12 4Zm-3.2 3.9c-.2 0-.5.1-.7.4-.3.3-1 1-1 2.4 0 1.4 1 2.8 1.1 3 .1.2 2 3.2 5 4.3 2.4 1 2.9.8 3.4.8.6-.1 1.9-.8 2.1-1.5.3-.7.3-1.4.2-1.5-.1-.2-.3-.3-.6-.4-.3-.2-1.9-.9-2.2-1-.3-.1-.5-.2-.7.2-.2.3-.8 1-1 1.2-.2.2-.4.2-.7.1-.3-.2-1.3-.5-2.5-1.6-.9-.8-1.5-1.8-1.7-2.1-.2-.3 0-.5.1-.6l.5-.6c.2-.2.2-.3.3-.6.1-.2 0-.4 0-.6-.1-.2-.7-1.8-1-2.4-.2-.6-.5-.5-.7-.5h-.5Z"/></svg>;
+    default: return null;
+  }
+};
+
+/* ---------------------------------------------------------
+   LOGO
+--------------------------------------------------------- */
+const Logo = ({ size = 'md' }) => {
+  const dims = size === 'lg' ? { box:48, font:'text-base' } : { box:38, font:'text-sm' };
+  return (
+    <div className="flex items-center gap-2.5 select-none">
+      <svg width={dims.box} height={dims.box} viewBox="0 0 48 48" className="shrink-0">
+        <rect x="1" y="1" width="46" height="46" rx="11" fill="#161B22" stroke="#2A323D" />
+        <path d="M24 6 L24 42" stroke="#2A323D" strokeWidth="1" />
+        <text x="24" y="29" textAnchor="middle" fontFamily="Space Grotesk, sans-serif" fontWeight="700" fontSize="19" fill="#EDEFF2">ES</text>
+        <circle cx="9" cy="9" r="2" fill="#F2A93B"/>
+        <circle cx="39" cy="39" r="2" fill="#3FD6C8"/>
+        <path d="M9 11v6a3 3 0 0 0 3 3h2" stroke="#F2A93B" strokeWidth="1.3" fill="none"/>
+        <path d="M39 37v-6a3 3 0 0 0-3-3h-2" stroke="#3FD6C8" strokeWidth="1.3" fill="none"/>
+      </svg>
+      <div className="leading-none">
+        <div className={`font-display font-700 ${dims.font} tracking-tight text-paper`}>El&#8209;Sharkawy</div>
+        <div className="text-[10px] tracking-[0.18em] uppercase text-mute mt-0.5">Electronics &amp; Repair</div>
+      </div>
+    </div>
+  );
+};
+
+/* ---------------------------------------------------------
+   TOAST
+--------------------------------------------------------- */
+const Toast = ({ toast }) => {
+  if (!toast) return null;
+  return (
+    <div className="fixed bottom-5 left-1/2 -translate-x-1/2 z-[100] rise">
+      <div className={`flex items-center gap-2.5 px-4 py-3 rounded-xl shadow-2xl border ${toast.type==='error' ? 'bg-red/10 border-red/30 text-red' : 'bg-teal/10 border-teal/30 text-teal'} backdrop-blur-md`}>
+        <Icon name={toast.type==='error' ? 'close' : 'check'} className="w-4 h-4 shrink-0" />
+        <span className="text-sm font-medium text-paper">{toast.msg}</span>
+      </div>
+    </div>
+  );
+};
+
+/* ---------------------------------------------------------
+   NAV
+--------------------------------------------------------- */
+const NAV_ITEMS = [
+  { id:'home', label:'Home' },
+  { id:'products', label:'Products' },
+  { id:'reserve', label:'Reserve' },
+  { id:'contact', label:'Contact' },
+  { id:'admin', label:'Admin' },
+];
+
+const Nav = ({ page, setPage }) => {
+  const [open, setOpen] = useState(false);
+  const go = (id) => { setPage(id); setOpen(false); window.scrollTo({top:0, behavior:'smooth'}); };
+  return (
+    <header className="sticky top-0 z-50 backdrop-blur-md bg-ink/85 border-b border-line">
+      <div className="max-w-6xl mx-auto px-5 sm:px-8 h-16 flex items-center justify-between">
+        <button onClick={()=>go('home')} className="focus-ring rounded-md"><Logo /></button>
+        <nav className="hidden md:flex items-center gap-1">
+          {NAV_ITEMS.map(it => (
+            <button key={it.id} onClick={()=>go(it.id)}
+              className={`focus-ring px-3.5 py-2 rounded-lg text-sm font-medium transition-colors ${page===it.id ? 'text-ink bg-amber' : 'text-mute hover:text-paper hover:bg-panel2'}`}>
+              {it.label}
+            </button>
+          ))}
+        </nav>
+        <div className="hidden md:flex items-center gap-3">
+          <a href="tel:01210098086" className="focus-ring flex items-center gap-2 text-sm font-mono text-paper border border-line hover:border-amber/50 rounded-lg px-3 py-2 transition-colors">
+            <Icon name="phone" className="w-3.5 h-3.5 text-amber" /> 0121&nbsp;009&nbsp;8086
+          </a>
+        </div>
+        <button onClick={()=>setOpen(!open)} className="md:hidden focus-ring p-2 -mr-2 text-paper">
+          <Icon name={open ? 'close':'menu'} className="w-6 h-6" />
+        </button>
+      </div>
+      {open && (
+        <div className="md:hidden border-t border-line bg-ink rise">
+          <div className="px-5 py-3 flex flex-col gap-1">
+            {NAV_ITEMS.map(it => (
+              <button key={it.id} onClick={()=>go(it.id)}
+                className={`focus-ring text-left px-3 py-2.5 rounded-lg text-sm font-medium ${page===it.id ? 'text-ink bg-amber' : 'text-mute hover:bg-panel2'}`}>
+                {it.label}
+              </button>
+            ))}
+            <a href="tel:01210098086" className="mt-1 flex items-center gap-2 text-sm font-mono text-paper border border-line rounded-lg px-3 py-2.5">
+              <Icon name="phone" className="w-3.5 h-3.5 text-amber" /> 0121 009 8086
+            </a>
+          </div>
+        </div>
+      )}
+    </header>
+  );
+};
+
+/* ---------------------------------------------------------
+   FOOTER
+--------------------------------------------------------- */
+const Footer = ({ setPage }) => (
+  <footer className="border-t border-line bg-panel mt-24">
+    <div className="max-w-6xl mx-auto px-5 sm:px-8 py-12 grid sm:grid-cols-3 gap-10">
+      <div>
+        <Logo />
+        <p className="text-sm text-mute mt-4 leading-relaxed max-w-xs">Electronics sales and computer maintenance, run by Amr El-Sharkawy. Honest pricing, real parts, fast turnaround.</p>
+      </div>
+      <div>
+        <div className="text-xs uppercase tracking-[0.16em] text-mute mb-3">Visit</div>
+        <div className="flex items-start gap-2.5 text-sm text-paper mb-2"><Icon name="pin" className="w-4 h-4 text-amber mt-0.5 shrink-0"/> Maahad Deeni Street, Maadi, Cairo, Egypt</div>
+        <div className="flex items-center gap-2.5 text-sm text-paper mb-2"><Icon name="phone" className="w-4 h-4 text-amber shrink-0"/> 01210098086</div>
+        <div className="flex items-center gap-2.5 text-sm text-paper"><Icon name="clock" className="w-4 h-4 text-amber shrink-0"/> Daily 12 PM – 12 AM, closed Fridays</div>
+      </div>
+      <div>
+        <div className="text-xs uppercase tracking-[0.16em] text-mute mb-3">Quick links</div>
+        <div className="flex flex-col gap-2 text-sm">
+          {NAV_ITEMS.map(it => <button key={it.id} onClick={()=>{setPage(it.id); window.scrollTo({top:0,behavior:'smooth'});}} className="text-left text-mute hover:text-amber transition-colors w-fit">{it.label}</button>)}
+        </div>
+      </div>
+    </div>
+    <div className="border-t border-line">
+      <div className="max-w-6xl mx-auto px-5 sm:px-8 py-5 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-mute">
+        <span>&copy; {new Date().getFullYear()} El-Sharkawy Electronics. Owner: Amr El-Sharkawy.</span>
+        <span className="font-mono">Maadi · Cairo · Egypt</span>
+      </div>
+    </div>
+  </footer>
+);
+
+/* ---------------------------------------------------------
+   HOME PAGE
+--------------------------------------------------------- */
+const StatusLegendDot = ({ status }) => {
+  const s = statusStyle[status];
+  return <span className={`inline-flex items-center gap-1.5 text-xs text-mute`}><span className={`w-1.5 h-1.5 rounded-full ${s.dot}`}></span>{status}</span>;
+};
+
+const Home = ({ setPage, products }) => {
+  const lowStock = products.filter(p=>statusOf(p.qty)==='Low Stock').length;
+  const available = products.filter(p=>statusOf(p.qty)==='Available').length;
+  const categories = ['Laptops','Desktop PCs','Monitors','Keyboards','SSD Drives'];
+
+  return (
+    <div>
+      {/* HERO */}
+      <section className="relative overflow-hidden border-b border-line">
+        <div className="absolute inset-0 bg-grid bg-grid-size [mask-image:radial-gradient(ellipse_70%_60%_at_50%_0%,#000_10%,transparent_75%)]"></div>
+        <div className="absolute -top-24 -right-24 w-96 h-96 rounded-full bg-amber/10 blur-3xl"></div>
+        <div className="absolute top-40 -left-24 w-72 h-72 rounded-full bg-teal/10 blur-3xl"></div>
+
+        <div className="relative max-w-6xl mx-auto px-5 sm:px-8 pt-16 pb-20 sm:pt-24 sm:pb-28">
+          <div className="rise flex items-center gap-2 text-xs font-mono text-amber border border-amber/25 bg-amber/5 w-fit px-3 py-1.5 rounded-full mb-7">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber pulse-soft"></span>
+            OPEN NOW · 12 PM – 12 AM · CLOSED FRIDAYS
+          </div>
+          <h1 className="rise font-display text-4xl sm:text-6xl font-700 leading-[1.05] tracking-tight max-w-3xl" style={{animationDelay:'.05s'}}>
+            Cairo's straight&#8209;talking shop for <span className="text-amber">electronics</span> &amp; <span className="text-teal">computer repair</span>.
+          </h1>
+          <p className="rise text-mute text-base sm:text-lg max-w-xl mt-6 leading-relaxed" style={{animationDelay:'.12s'}}>
+            Run by Amr El-Sharkawy in the heart of Maadi. Laptops, desktops, monitors, keyboards, and SSDs in stock — plus honest, fast maintenance for the machines you already own.
+          </p>
+          <div className="rise flex flex-wrap items-center gap-3 mt-9" style={{animationDelay:'.18s'}}>
+            <button onClick={()=>setPage('products')} className="focus-ring group flex items-center gap-2 bg-amber text-ink font-semibold px-5 py-3 rounded-xl hover:bg-amberD transition-colors">
+              Browse products <Icon name="arrow" className="w-4 h-4 group-hover:translate-x-0.5 transition-transform"/>
+            </button>
+            <button onClick={()=>setPage('reserve')} className="focus-ring border border-line hover:border-teal/50 text-paper font-semibold px-5 py-3 rounded-xl transition-colors">
+              Reserve an item
+            </button>
+            <a href="tel:01210098086" className="focus-ring flex items-center gap-2 text-paper font-mono text-sm px-3 py-3">
+              <Icon name="phone" className="w-4 h-4 text-amber"/> 01210098086
+            </a>
+          </div>
+
+          {/* stats strip */}
+          <div className="rise grid grid-cols-3 sm:max-w-md gap-px bg-line border border-line rounded-xl overflow-hidden mt-12" style={{animationDelay:'.24s'}}>
+            <div className="bg-panel px-4 py-4">
+              <div className="font-mono text-2xl font-semibold text-paper">{products.length}</div>
+              <div className="text-[11px] text-mute uppercase tracking-wide mt-1">SKUs tracked</div>
+            </div>
+            <div className="bg-panel px-4 py-4">
+              <div className="font-mono text-2xl font-semibold text-teal">{available}</div>
+              <div className="text-[11px] text-mute uppercase tracking-wide mt-1">In stock now</div>
+            </div>
+            <div className="bg-panel px-4 py-4">
+              <div className="font-mono text-2xl font-semibold text-amber">{lowStock}</div>
+              <div className="text-[11px] text-mute uppercase tracking-wide mt-1">Running low</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* WHY US */}
+      <section className="max-w-6xl mx-auto px-5 sm:px-8 py-20">
+        <div className="flex items-end justify-between flex-wrap gap-4 mb-10">
+          <div>
+            <div className="text-xs font-mono text-amber tracking-[0.16em] uppercase mb-2">Why Maadi trusts this shop</div>
+            <h2 className="font-display text-2xl sm:text-3xl font-700">Sales and service, under one roof.</h2>
+          </div>
+        </div>
+        <div className="grid sm:grid-cols-3 gap-5">
+          {[
+            { icon:'bolt', title:'Same-day repairs', text:'Most hardware and software issues fixed the same day you walk in.' },
+            { icon:'shield', title:'Genuine parts', text:'No knock-off components — every part we sell or install is the real thing.' },
+            { icon:'tool', title:'Built &amp; tested PCs', text:'Desktops assembled and stress-tested in-store before they reach you.' },
+          ].map((f,i)=>(
+            <div key={i} className="rounded-2xl border border-line bg-panel p-6 hover:border-amber/40 transition-colors">
+              <div className="w-10 h-10 rounded-lg bg-amber/10 flex items-center justify-center mb-4">
+                <Icon name={f.icon} className="w-5 h-5 text-amber"/>
+              </div>
+              <div className="font-display font-600 text-lg mb-1.5">{f.title}</div>
+              <div className="text-sm text-mute leading-relaxed" dangerouslySetInnerHTML={{__html:f.text}}></div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* CATEGORIES */}
+      <section className="border-y border-line bg-panel/50">
+        <div className="max-w-6xl mx-auto px-5 sm:px-8 py-20">
+          <div className="text-xs font-mono text-teal tracking-[0.16em] uppercase mb-2">What's on the shelf</div>
+          <h2 className="font-display text-2xl sm:text-3xl font-700 mb-10">Five categories, always stocked.</h2>
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
+            {categories.map(c => {
+              const count = products.filter(p=>p.category===c).length;
+              return (
+                <button key={c} onClick={()=>setPage('products')} className="focus-ring group text-left rounded-2xl border border-line bg-ink p-5 hover:border-teal/40 hover:-translate-y-0.5 transition-all">
+                  <Icon name={CATEGORY_ICON[c]} className="w-7 h-7 text-teal mb-4"/>
+                  <div className="font-display font-600 text-sm leading-tight">{c}</div>
+                  <div className="text-xs text-mute font-mono mt-1">{count} listed</div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* INFO STRIP */}
+      <section className="max-w-6xl mx-auto px-5 sm:px-8 py-20 grid sm:grid-cols-3 gap-6">
+        <div className="rounded-2xl border border-line bg-panel p-6">
+          <Icon name="pin" className="w-5 h-5 text-amber mb-3"/>
+          <div className="text-xs uppercase tracking-wide text-mute mb-1">Address</div>
+          <div className="text-sm text-paper leading-relaxed">Maahad Deeni Street, Maadi,<br/>Cairo, Egypt</div>
+        </div>
+        <div className="rounded-2xl border border-line bg-panel p-6">
+          <Icon name="clock" className="w-5 h-5 text-amber mb-3"/>
+          <div className="text-xs uppercase tracking-wide text-mute mb-1">Working hours</div>
+          <div className="text-sm text-paper leading-relaxed">Daily, 12 PM – 12 AM<br/>Closed on Fridays</div>
+        </div>
+        <div className="rounded-2xl border border-line bg-panel p-6">
+          <Icon name="phone" className="w-5 h-5 text-amber mb-3"/>
+          <div className="text-xs uppercase tracking-wide text-mute mb-1">Call or WhatsApp</div>
+          <div className="text-sm text-paper font-mono leading-relaxed">01210098086</div>
+        </div>
+      </section>
+    </div>
+  );
+};
+
+/* ---------------------------------------------------------
+   PRODUCTS PAGE
+--------------------------------------------------------- */
+const ProductCard = ({ p, onReserve }) => {
+  const status = statusOf(p.qty);
+  const s = statusStyle[status];
+  return (
+    <div className="group rounded-2xl border border-line bg-panel overflow-hidden hover:border-amber/40 transition-colors flex flex-col">
+      <div className="relative h-36 bg-panel2 flex items-center justify-center tick">
+        <Icon name={CATEGORY_ICON[p.category]} className="w-12 h-12 text-mute group-hover:text-amber transition-colors"/>
+        <span className={`absolute top-3 right-3 inline-flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1 rounded-full ring-1 ${s.bg} ${s.text} ${s.ring}`}>
+          <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`}></span>{status}
+        </span>
+      </div>
+      <div className="p-4 flex flex-col gap-2.5 flex-1">
+        <div className="text-[11px] font-mono uppercase tracking-wide text-mute">{p.category}</div>
+        <div className="font-display font-600 text-sm leading-snug">{p.name}</div>
+        <div className="flex items-center justify-between mt-auto pt-2">
+          <span className="font-mono text-sm text-amber">{fmtEGP(p.price)}</span>
+          <span className="text-xs font-mono text-mute">Qty: {p.qty}</span>
+        </div>
+        <button disabled={status==='Out of Stock'} onClick={()=>onReserve(p)}
+          className={`focus-ring mt-1 w-full py-2.5 rounded-lg text-sm font-semibold transition-colors ${status==='Out of Stock' ? 'bg-panel2 text-mute cursor-not-allowed' : 'bg-amber text-ink hover:bg-amberD'}`}>
+          {status==='Out of Stock' ? 'Unavailable' : 'Reserve this'}
+        </button>
+      </div>
+    </div>
+  );
+};
+
+const Products = ({ products, setPage, setPreselect }) => {
+  const [cat, setCat] = useState('All');
+  const [query, setQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('All');
+  const categories = ['All','Laptops','Desktop PCs','Monitors','Keyboards','SSD Drives'];
+
+  const filtered = products.filter(p => {
+    if (cat !== 'All' && p.category !== cat) return false;
+    if (statusFilter !== 'All' && statusOf(p.qty) !== statusFilter) return false;
+    if (query && !p.name.toLowerCase().includes(query.toLowerCase())) return false;
+    return true;
+  });
+
+  const onReserve = (p) => { setPreselect(p.id); setPage('reserve'); window.scrollTo({top:0,behavior:'smooth'}); };
+
+  return (
+    <div className="max-w-6xl mx-auto px-5 sm:px-8 py-14">
+      <div className="text-xs font-mono text-amber tracking-[0.16em] uppercase mb-2">Inventory</div>
+      <h1 className="font-display text-3xl sm:text-4xl font-700 mb-3">Products</h1>
+      <p className="text-mute max-w-xl mb-8">Live stock from the shop floor. Status updates as items sell out — reserve what you need and we'll hold it for pickup.</p>
+
+      <div className="flex flex-col sm:flex-row gap-3 mb-8">
+        <input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search products…"
+          className="focus-ring flex-1 bg-panel border border-line rounded-xl px-4 py-2.5 text-sm placeholder:text-mute" />
+        <select value={statusFilter} onChange={e=>setStatusFilter(e.target.value)} className="focus-ring bg-panel border border-line rounded-xl px-4 py-2.5 text-sm">
+          {['All','Available','Low Stock','Out of Stock'].map(s => <option key={s} value={s}>{s}</option>)}
+        </select>
+      </div>
+
+      <div className="flex flex-wrap gap-2 mb-9">
+        {categories.map(c => (
+          <button key={c} onClick={()=>setCat(c)}
+            className={`focus-ring px-3.5 py-1.5 rounded-full text-xs font-medium border transition-colors ${cat===c ? 'bg-amber text-ink border-amber' : 'border-line text-mute hover:text-paper hover:border-amber/40'}`}>
+            {c}
+          </button>
+        ))}
+      </div>
+
+      {filtered.length === 0 ? (
+        <div className="border border-dashed border-line rounded-2xl py-16 text-center text-mute">No products match those filters.</div>
+      ) : (
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          {filtered.map(p => <ProductCard key={p.id} p={p} onReserve={onReserve}/>)}
+        </div>
+      )}
+    </div>
+  );
+};
+
+/* ---------------------------------------------------------
+   RESERVE PAGE
+--------------------------------------------------------- */
+const Reserve = ({ products, addReservation, preselect, notify }) => {
+  const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [productId, setProductId] = useState(preselect || '');
+  const [errors, setErrors] = useState({});
+
+  useEffect(()=>{ if (preselect) setProductId(preselect); }, [preselect]);
+
+  const available = products.filter(p => statusOf(p.qty) !== 'Out of Stock');
+
+  const validate = () => {
+    const e = {};
+    if (!name.trim() || name.trim().length < 2) e.name = 'Enter the customer\'s full name.';
+    if (!/^01[0125][0-9]{8}$/.test(phone.trim())) e.phone = 'Enter a valid Egyptian phone number (e.g. 01210098086).';
+    if (!productId) e.product = 'Choose a product to reserve.';
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  };
+
+  const submit = (ev) => {
+    ev.preventDefault();
+    if (!validate()) return;
+    const product = products.find(p=>p.id===productId);
+    addReservation({ id:'r'+Date.now(), name:name.trim(), phone:phone.trim(), productId, productName:product.name, createdAt:new Date().toISOString(), status:'Pending' });
+    setName(''); setPhone(''); setProductId('');
+    notify('Reservation sent — we\'ll confirm by phone shortly.', 'success');
+  };
+
+  return (
+    <div className="max-w-2xl mx-auto px-5 sm:px-8 py-14">
+      <div className="text-xs font-mono text-teal tracking-[0.16em] uppercase mb-2">Hold an item</div>
+      <h1 className="font-display text-3xl sm:text-4xl font-700 mb-3">Reserve a product</h1>
+      <p className="text-mute mb-9">Tell us what you need and we'll set it aside. No payment now — just bring ID and cash or card when you pick it up.</p>
+
+      <form onSubmit={submit} className="rounded-2xl border border-line bg-panel p-6 sm:p-8 flex flex-col gap-5">
+        <div>
+          <label className="block text-sm font-medium mb-1.5">Customer name</label>
+          <input value={name} onChange={e=>setName(e.target.value)} placeholder="e.g. Mohamed Ahmed"
+            className={`focus-ring w-full bg-panel2 border rounded-xl px-4 py-2.5 text-sm placeholder:text-mute ${errors.name ? 'border-red' : 'border-line'}`} />
+          {errors.name && <div className="text-xs text-red mt-1.5">{errors.name}</div>}
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1.5">Phone number</label>
+          <input value={phone} onChange={e=>setPhone(e.target.value)} placeholder="01XXXXXXXXX" inputMode="numeric"
+            className={`focus-ring w-full bg-panel2 border rounded-xl px-4 py-2.5 text-sm font-mono placeholder:text-mute placeholder:font-body ${errors.phone ? 'border-red' : 'border-line'}`} />
+          {errors.phone && <div className="text-xs text-red mt-1.5">{errors.phone}</div>}
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1.5">Product</label>
+          <select value={productId} onChange={e=>setProductId(e.target.value)}
+            className={`focus-ring w-full bg-panel2 border rounded-xl px-4 py-2.5 text-sm ${errors.product ? 'border-red' : 'border-line'}`}>
+            <option value="">Select a product…</option>
+            {available.map(p => (
+              <option key={p.id} value={p.id}>{p.name} — {fmtEGP(p.price)} ({statusOf(p.qty)})</option>
+            ))}
+          </select>
+          {errors.product && <div className="text-xs text-red mt-1.5">{errors.product}</div>}
+        </div>
+        <button type="submit" className="focus-ring mt-2 bg-amber text-ink font-semibold py-3 rounded-xl hover:bg-amberD transition-colors">
+          Reserve now
+        </button>
+        <p className="text-xs text-mute text-center">By reserving you agree we'll call this number to confirm pickup details.</p>
+      </form>
+    </div>
+  );
+};
+
+/* ---------------------------------------------------------
+   CONTACT PAGE
+--------------------------------------------------------- */
+const Contact = () => (
+  <div className="max-w-6xl mx-auto px-5 sm:px-8 py-14">
+    <div className="text-xs font-mono text-amber tracking-[0.16em] uppercase mb-2">Get in touch</div>
+    <h1 className="font-display text-3xl sm:text-4xl font-700 mb-3">Visit the shop</h1>
+    <p className="text-mute max-w-xl mb-10">Drop by in Maadi, or call ahead and we'll have your order ready.</p>
+
+    <div className="grid lg:grid-cols-5 gap-6">
+      <div className="lg:col-span-3 rounded-2xl overflow-hidden border border-line bg-panel2 h-80 lg:h-auto min-h-[320px]">
+        <iframe
+          title="El-Sharkawy location map"
+          className="w-full h-full grayscale-[40%] opacity-90"
+          style={{filter:'invert(0.92) hue-rotate(180deg) contrast(0.85)'}}
+          loading="lazy"
+          referrerPolicy="no-referrer-when-downgrade"
+          src="https://maps.google.com/maps?q=Maadi%2C%20Cairo%2C%20Egypt&t=&z=14&ie=UTF8&iwloc=&output=embed">
+        </iframe>
+      </div>
+
+      <div className="lg:col-span-2 flex flex-col gap-4">
+        <div className="rounded-2xl border border-line bg-panel p-6">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-9 h-9 rounded-lg bg-amber/10 flex items-center justify-center"><Icon name="pin" className="w-4.5 h-4.5 text-amber"/></div>
+            <div className="font-display font-600">Address</div>
+          </div>
+          <p className="text-sm text-mute leading-relaxed pl-12">Maahad Deeni Street, Maadi, Cairo, Egypt</p>
+        </div>
+        <div className="rounded-2xl border border-line bg-panel p-6">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-9 h-9 rounded-lg bg-teal/10 flex items-center justify-center"><Icon name="phone" className="w-4.5 h-4.5 text-teal"/></div>
+            <div className="font-display font-600">Phone</div>
+          </div>
+          <a href="tel:01210098086" className="focus-ring text-sm font-mono text-paper hover:text-teal pl-12 block">01210098086</a>
+        </div>
+        <div className="rounded-2xl border border-line bg-panel p-6">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-9 h-9 rounded-lg bg-amber/10 flex items-center justify-center"><Icon name="clock" className="w-4.5 h-4.5 text-amber"/></div>
+            <div className="font-display font-600">Working hours</div>
+          </div>
+          <p className="text-sm text-mute leading-relaxed pl-12">Daily, 12:00 PM – 12:00 AM<br/>Closed on Fridays</p>
+        </div>
+        <a href="https://wa.me/2001210098086" target="_blank" rel="noopener" className="focus-ring flex items-center justify-center gap-2 bg-[#25D366]/10 border border-[#25D366]/30 text-[#25D366] font-semibold py-3 rounded-xl hover:bg-[#25D366]/20 transition-colors">
+          <Icon name="whatsapp" className="w-4.5 h-4.5"/> Message on WhatsApp
+        </a>
+      </div>
+    </div>
+  </div>
+);
+
+/* ---------------------------------------------------------
+   ADMIN DASHBOARD
+--------------------------------------------------------- */
+const AdminLogin = ({ onLogin }) => {
+  const [pin, setPin] = useState('');
+  const [err, setErr] = useState('');
+  const submit = (e) => {
+    e.preventDefault();
+    if (pin === '2026') onLogin();
+    else setErr('Incorrect PIN. (Demo PIN: 2026)');
+  };
+  return (
+    <div className="max-w-sm mx-auto px-5 py-24">
+      <div className="rounded-2xl border border-line bg-panel p-8 text-center">
+        <div className="w-12 h-12 rounded-xl bg-amber/10 flex items-center justify-center mx-auto mb-5">
+          <Icon name="lock" className="w-5 h-5 text-amber"/>
+        </div>
+        <div className="font-display font-700 text-xl mb-1">Admin access</div>
+        <p className="text-sm text-mute mb-6">Staff only. Enter the dashboard PIN.</p>
+        <form onSubmit={submit} className="flex flex-col gap-3">
+          <input value={pin} onChange={e=>setPin(e.target.value)} type="password" inputMode="numeric" placeholder="PIN"
+            className="focus-ring text-center font-mono tracking-[0.3em] bg-panel2 border border-line rounded-xl px-4 py-3 placeholder:tracking-normal" />
+          {err && <div className="text-xs text-red">{err}</div>}
+          <button className="focus-ring bg-amber text-ink font-semibold py-3 rounded-xl hover:bg-amberD transition-colors">Enter dashboard</button>
+        </form>
+        <p className="text-[11px] text-mute mt-5">Demo PIN: <span className="font-mono text-paper">2026</span></p>
+      </div>
+    </div>
+  );
+};
+
+const AdminProducts = ({ products, setProducts, notify }) => {
+  const [form, setForm] = useState({ name:'', category:'Laptops', qty:'', price:'' });
+  const categories = ['Laptops','Desktop PCs','Monitors','Keyboards','SSD Drives'];
+
+  const addProduct = (e) => {
+    e.preventDefault();
+    if (!form.name.trim() || form.qty === '' || form.price === '') { notify('Fill in name, quantity and price.', 'error'); return; }
+    const np = { id:'p'+Date.now(), name:form.name.trim(), category:form.category, qty: Number(form.qty), price: Number(form.price) };
+    const next = [np, ...products];
+    setProducts(next); saveProducts(next);
+    setForm({ name:'', category:'Laptops', qty:'', price:'' });
+    notify('Product added.', 'success');
+  };
+
+  const updateQty = (id, delta) => {
+    const next = products.map(p => p.id===id ? { ...p, qty: Math.max(0, p.qty + delta) } : p);
+    setProducts(next); saveProducts(next);
+  };
+  const setQtyDirect = (id, val) => {
+    const next = products.map(p => p.id===id ? { ...p, qty: Math.max(0, Number(val)||0) } : p);
+    setProducts(next); saveProducts(next);
+  };
+  const removeProduct = (id) => {
+    const next = products.filter(p=>p.id!==id);
+    setProducts(next); saveProducts(next);
+    notify('Product removed.', 'success');
+  };
+
+  return (
+    <div className="flex flex-col gap-8">
+      <form onSubmit={addProduct} className="rounded-2xl border border-line bg-panel p-6 grid sm:grid-cols-5 gap-3 items-end">
+        <div className="sm:col-span-2">
+          <label className="block text-xs text-mute mb-1.5">Product name</label>
+          <input value={form.name} onChange={e=>setForm({...form,name:e.target.value})} placeholder="e.g. HP Pavilion 15"
+            className="focus-ring w-full bg-panel2 border border-line rounded-lg px-3 py-2.5 text-sm" />
+        </div>
+        <div>
+          <label className="block text-xs text-mute mb-1.5">Category</label>
+          <select value={form.category} onChange={e=>setForm({...form,category:e.target.value})}
+            className="focus-ring w-full bg-panel2 border border-line rounded-lg px-3 py-2.5 text-sm">
+            {categories.map(c=><option key={c}>{c}</option>)}
+          </select>
+        </div>
+        <div>
+          <label className="block text-xs text-mute mb-1.5">Quantity</label>
+          <input value={form.qty} onChange={e=>setForm({...form,qty:e.target.value})} type="number" min="0" placeholder="0"
+            className="focus-ring w-full bg-panel2 border border-line rounded-lg px-3 py-2.5 text-sm font-mono" />
+        </div>
+        <div className="flex gap-2">
+          <div className="flex-1">
+            <label className="block text-xs text-mute mb-1.5">Price (EGP)</label>
+            <input value={form.price} onChange={e=>setForm({...form,price:e.target.value})} type="number" min="0" placeholder="0"
+              className="focus-ring w-full bg-panel2 border border-line rounded-lg px-3 py-2.5 text-sm font-mono" />
+          </div>
+          <button className="focus-ring shrink-0 bg-amber text-ink rounded-lg px-3.5 self-end h-[42px] hover:bg-amberD transition-colors" title="Add product">
+            <Icon name="plus" className="w-4 h-4"/>
+          </button>
+        </div>
+      </form>
+
+      <div className="rounded-2xl border border-line bg-panel overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-line text-left text-xs text-mute uppercase tracking-wide">
+                <th className="px-5 py-3 font-medium">Product</th>
+                <th className="px-5 py-3 font-medium">Category</th>
+                <th className="px-5 py-3 font-medium">Price</th>
+                <th className="px-5 py-3 font-medium">Quantity</th>
+                <th className="px-5 py-3 font-medium">Status</th>
+                <th className="px-5 py-3 font-medium"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {products.map(p => {
+                const status = statusOf(p.qty); const s = statusStyle[status];
+                return (
+                  <tr key={p.id} className="border-b border-line last:border-0 hover:bg-panel2/60">
+                    <td className="px-5 py-3.5 max-w-[220px]">{p.name}</td>
+                    <td className="px-5 py-3.5 text-mute whitespace-nowrap">{p.category}</td>
+                    <td className="px-5 py-3.5 font-mono text-amber whitespace-nowrap">{fmtEGP(p.price)}</td>
+                    <td className="px-5 py-3.5">
+                      <div className="flex items-center gap-1.5">
+                        <button onClick={()=>updateQty(p.id,-1)} className="focus-ring w-7 h-7 rounded-md border border-line hover:border-amber/50 text-mute hover:text-paper">–</button>
+                        <input value={p.qty} onChange={e=>setQtyDirect(p.id, e.target.value)} className="focus-ring w-12 text-center bg-panel2 border border-line rounded-md py-1 font-mono text-sm" />
+                        <button onClick={()=>updateQty(p.id,1)} className="focus-ring w-7 h-7 rounded-md border border-line hover:border-amber/50 text-mute hover:text-paper">+</button>
+                      </div>
+                    </td>
+                    <td className="px-5 py-3.5">
+                      <span className={`inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full ring-1 ${s.bg} ${s.text} ${s.ring}`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`}></span>{status}
+                      </span>
+                    </td>
+                    <td className="px-5 py-3.5 text-right">
+                      <button onClick={()=>removeProduct(p.id)} className="focus-ring text-mute hover:text-red p-1.5"><Icon name="trash" className="w-4 h-4"/></button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const AdminReservations = ({ reservations, setReservations, notify }) => {
+  const cycle = { Pending:'Confirmed', Confirmed:'Completed', Completed:'Pending' };
+  const badge = { Pending:'text-amber bg-amber/10 ring-amber/30', Confirmed:'text-teal bg-teal/10 ring-teal/30', Completed:'text-mute bg-panel2 ring-line' };
+
+  const advance = (id) => {
+    const next = reservations.map(r => r.id===id ? { ...r, status: cycle[r.status] } : r);
+    setReservations(next); saveReservations(next);
+  };
+  const remove = (id) => {
+    const next = reservations.filter(r=>r.id!==id);
+    setReservations(next); saveReservations(next);
+    notify('Reservation deleted.', 'success');
+  };
+
+  if (reservations.length === 0) {
+    return <div className="border border-dashed border-line rounded-2xl py-16 text-center text-mute">No reservations yet — they'll show up here as customers submit the form.</div>;
+  }
+
+  return (
+    <div className="rounded-2xl border border-line bg-panel overflow-hidden">
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-line text-left text-xs text-mute uppercase tracking-wide">
+              <th className="px-5 py-3 font-medium">Customer</th>
+              <th className="px-5 py-3 font-medium">Phone</th>
+              <th className="px-5 py-3 font-medium">Product</th>
+              <th className="px-5 py-3 font-medium">Submitted</th>
+              <th className="px-5 py-3 font-medium">Status</th>
+              <th className="px-5 py-3 font-medium"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {[...reservations].reverse().map(r => (
+              <tr key={r.id} className="border-b border-line last:border-0 hover:bg-panel2/60">
+                <td className="px-5 py-3.5">{r.name}</td>
+                <td className="px-5 py-3.5 font-mono text-mute whitespace-nowrap">{r.phone}</td>
+                <td className="px-5 py-3.5 max-w-[220px]">{r.productName}</td>
+                <td className="px-5 py-3.5 text-mute whitespace-nowrap">{new Date(r.createdAt).toLocaleString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})}</td>
+                <td className="px-5 py-3.5">
+                  <button onClick={()=>advance(r.id)} className={`focus-ring inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full ring-1 ${badge[r.status]}`}>
+                    {r.status}
+                  </button>
+                </td>
+                <td className="px-5 py-3.5 text-right">
+                  <button onClick={()=>remove(r.id)} className="focus-ring text-mute hover:text-red p-1.5"><Icon name="trash" className="w-4 h-4"/></button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+};
+
+const Admin = ({ products, setProducts, reservations, setReservations, notify }) => {
+  const [authed, setAuthed] = useState(false);
+  const [tab, setTab] = useState('products');
+
+  if (!authed) return <AdminLogin onLogin={()=>setAuthed(true)} />;
+
+  return (
+    <div className="max-w-6xl mx-auto px-5 sm:px-8 py-14">
+      <div className="flex items-start justify-between flex-wrap gap-4 mb-8">
+        <div>
+          <div className="text-xs font-mono text-teal tracking-[0.16em] uppercase mb-2">Staff dashboard</div>
+          <h1 className="font-display text-3xl sm:text-4xl font-700">Admin</h1>
+        </div>
+        <button onClick={()=>setAuthed(false)} className="focus-ring flex items-center gap-2 text-sm text-mute hover:text-paper border border-line rounded-lg px-3.5 py-2">
+          <Icon name="logout" className="w-4 h-4"/> Sign out
+        </button>
+      </div>
+
+      <div className="flex gap-2 mb-8 border-b border-line">
+        {[
+          {id:'products', label:`Products (${products.length})`},
+          {id:'reservations', label:`Reservations (${reservations.length})`},
+        ].map(t => (
+          <button key={t.id} onClick={()=>setTab(t.id)}
+            className={`focus-ring px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${tab===t.id ? 'border-amber text-paper' : 'border-transparent text-mute hover:text-paper'}`}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {tab==='products'
+        ? <AdminProducts products={products} setProducts={setProducts} notify={notify} />
+        : <AdminReservations reservations={reservations} setReservations={setReservations} notify={notify} />}
+    </div>
+  );
+};
+
+/* ---------------------------------------------------------
+   APP ROOT
+--------------------------------------------------------- */
+const App = () => {
+  const [page, setPage] = useState('home');
+  const [products, setProducts] = useState([]);
+  const [reservations, setReservations] = useState([]);
+  const [preselect, setPreselect] = useState('');
+  const [toast, setToast] = useState(null);
+
+  useEffect(() => {
+    setProducts(loadProducts());
+    setReservations(loadReservations());
+  }, []);
+
+  const notify = (msg, type='success') => {
+    setToast({ msg, type });
+    clearTimeout(window.__esToast);
+    window.__esToast = setTimeout(()=>setToast(null), 3200);
+  };
+
+  const addReservation = (r) => {
+    const next = [...reservations, r];
+    setReservations(next); saveReservations(next);
+  };
+
+  let body;
+  if (page==='home') body = <Home setPage={setPage} products={products} />;
+  else if (page==='products') body = <Products products={products} setPage={setPage} setPreselect={setPreselect} />;
+  else if (page==='reserve') body = <Reserve products={products} addReservation={addReservation} preselect={preselect} notify={notify} />;
+  else if (page==='contact') body = <Contact />;
+  else if (page==='admin') body = <Admin products={products} setProducts={setProducts} reservations={reservations} setReservations={setReservations} notify={notify} />;
+
+  return (
+    <div className="min-h-screen flex flex-col">
+      <Nav page={page} setPage={setPage} />
+      <main className="flex-1">{body}</main>
+      <Footer setPage={setPage} />
+      <Toast toast={toast} />
+    </div>
+  );
+};
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+<script>
+  // Manually transform the JSX source using the classic runtime so it
+  // works as a plain inline script (no module/import system needed).
+  var src = document.getElementById('app-source').textContent;
+  var compiled = Babel.transform(src, {
+    presets: [['react', { runtime: 'classic' }]]
+  }).code;
+  (0, eval)(compiled);
+</script>
+</body>
+</html>
